@@ -24,6 +24,8 @@ FARVER = {
 
 
 def generer_kode():
+    #return [8,8,8,8]
+    
     return random.choices(range(1, 9), k=4)
 
 
@@ -311,8 +313,7 @@ class MastermindApp:
             self._farvefelt(self.hemmelig_frame, tal).pack(side="left", padx=2)
 
     def _registrer_highscore(self):
-        
-        HighscorePanel.registrer_score(self.forsog)
+        self.highscore_panel.registrer_score(self.forsog)
         self._spil_igen()
 
     def _spil_igen(self):
