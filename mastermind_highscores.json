@@ -1,5 +1,13 @@
 [
   {
+    "navn": "Rachel",
+    "forsog": 1
+  },
+  {
+    "navn": "Michala",
+    "forsog": 1
+  },
+  {
     "navn": "Michala",
     "forsog": 5
   },
@@ -10,25 +18,5 @@
   {
     "navn": "Michala",
     "forsog": 6
-  },
-  {
-    "navn": "Michala",
-    "forsog": 6
-  },
-  {
-    "navn": "Patrick og Michala",
-    "forsog": 6
-  },
-  {
-    "navn": "Michala",
-    "forsog": 7
-  },
-  {
-    "navn": "Rachel",
-    "forsog": 7
-  },
-  {
-    "navn": "Michala",
-    "forsog": 8
   }
 ]

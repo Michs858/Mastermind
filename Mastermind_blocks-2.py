@@ -2,6 +2,7 @@ import random
 import tkinter as tk
 from tkinter import messagebox
 
+from ComparingGuess import tael_farver_i_kode, tael_rigtige_pladser
 from mastermind_highscores import HighscorePanel
 
 
@@ -27,23 +28,6 @@ def generer_kode():
     #return [8,8,8,8]
     
     return random.choices(range(1, 9), k=4)
-
-
-def tael_farver_i_kode(kode, gaet):
-    forkerte_kode_tal = [
-        kode_tal for kode_tal, gaet_tal in zip(kode, gaet) if kode_tal != gaet_tal
-    ]
-    forkerte_gaet_tal = [
-        gaet_tal for kode_tal, gaet_tal in zip(kode, gaet) if kode_tal != gaet_tal
-    ]
-    return sum(
-        min(forkerte_kode_tal.count(tal), forkerte_gaet_tal.count(tal))
-        for tal in set(forkerte_gaet_tal)
-    )
-
-
-def tael_rigtige_pladser(kode, gaet):
-    return sum(farve_kode == farve_gaet for farve_kode, farve_gaet in zip(kode, gaet))
 
 
 class MastermindApp:
@@ -75,8 +59,8 @@ class MastermindApp:
 
         indhold = tk.Frame(self.root, bg="#f4f1e8")
         indhold.grid(row=1, column=0, sticky="nsew", padx=24, pady=12)
-        indhold.columnconfigure(0, weight=3)
-        indhold.columnconfigure(1, weight=2)
+        indhold.columnconfigure(0, weight=1)
+        indhold.columnconfigure(1, weight=1)
         indhold.rowconfigure(1, weight=1)
 
         self.status = tk.Label(
@@ -157,7 +141,7 @@ class MastermindApp:
         ).grid(row=0, column=1, padx=(7, 0), ipady=5)
 
         self.submit_button = tk.Button(
-            venstre,
+            input_row,
             text="Gæt",
             command=self._indsend_gaet,
             bg="#2e7d32",
@@ -170,23 +154,47 @@ class MastermindApp:
             pady=7,
             cursor="hand2",
         )
-        self.submit_button.grid(row=4, column=0, sticky="w", pady=(10, 12))
+        self.submit_button.grid(row=0, column=2, padx=(7, 0), ipady=1)
 
         self.hemmelig_frame = tk.Frame(venstre, bg="#ffffff")
         self.hemmelig_frame.grid(row=5, column=0, sticky="w")
 
+        self.highscore_panel = HighscorePanel(venstre, row=6, column=0)
+
+        historik_panel = tk.Frame(indhold, bg="#ffffff", padx=16, pady=14)
+        historik_panel.grid(row=1, column=1, sticky="nsew")
+        historik_panel.columnconfigure(0, weight=1)
+        historik_panel.rowconfigure(1, weight=1)
+
         tk.Label(
-            venstre,
+            historik_panel,
             text="Dine gæt",
             font=("Segoe UI", 13, "bold"),
             bg="#ffffff",
             fg="#263238",
-        ).grid(row=6, column=0, sticky="w", pady=(8, 5))
+        ).grid(row=0, column=0, sticky="w", pady=(0, 5))
 
-        self.historik = tk.Frame(venstre, bg="#ffffff")
-        self.historik.grid(row=7, column=0, sticky="nsew")
+        self.historik = tk.Frame(historik_panel, bg="#ffffff")
+        self.historik.grid(row=1, column=0, sticky="nsew")
+        self.historik.rowconfigure(0, weight=1)
+        self.historik.columnconfigure(0, weight=1)
 
-        self.highscore_panel = HighscorePanel(indhold)
+        self.historik_canvas = tk.Canvas(
+            self.historik, bg="#ffffff", highlightthickness=0
+        )
+        scrollbar = tk.Scrollbar(
+            self.historik, orient="vertical", command=self.historik_canvas.yview
+        )
+        self.historik_canvas.configure(yscrollcommand=scrollbar.set)
+        self.historik_canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        self.historik_indhold = tk.Frame(self.historik_canvas, bg="#ffffff")
+        self._historik_vindue = self.historik_canvas.create_window(
+            (0, 0), window=self.historik_indhold, anchor="nw"
+        )
+        self.historik_indhold.bind("<Configure>", self._opdater_historik_scroll)
+        self.historik_canvas.bind("<Configure>", self._tilpas_historik_bredde)
 
     @staticmethod
     def _tekstfarve(tal):
@@ -258,10 +266,12 @@ class MastermindApp:
         )
 
     def _vis_gaet(self, gaet):
-        række = tk.Frame(self.historik, bg="#ffffff")
+        række = tk.Frame(self.historik_indhold, bg="#ffffff")
         række.pack(fill="x", pady=2)
+        gaet_række = tk.Frame(række, bg="#ffffff")
+        gaet_række.pack(anchor="w")
         tk.Label(
-            række,
+            gaet_række,
             text=f"{self.forsog:>2}.",
             width=3,
             anchor="w",
@@ -271,18 +281,27 @@ class MastermindApp:
         ).pack(side="left")
 
         for tal in gaet:
-            self._farvefelt(række, tal, small=True).pack(side="left", padx=2)
+            self._farvefelt(gaet_række, tal, small=True).pack(side="left", padx=2)
 
         tk.Label(
             række,
             text=(
-                f"  Forkert plads: {tael_farver_i_kode(self.kode, gaet)}"
-                f"   Rigtig plads: {tael_rigtige_pladser(self.kode, gaet)}"
+                f"Forkert: {tael_farver_i_kode(self.kode, gaet)}"
+                f"  |  Rigtig: {tael_rigtige_pladser(self.kode, gaet)}"
             ),
             font=("Segoe UI", 9),
             bg="#ffffff",
             fg="#455a64",
-        ).pack(side="left", padx=(5, 0))
+        ).pack(side="left", padx=(8, 0))
+        self.root.after_idle(lambda: self.historik_canvas.yview_moveto(1.0))
+
+    def _opdater_historik_scroll(self, _event=None):
+        self.historik_canvas.configure(
+            scrollregion=self.historik_canvas.bbox("all")
+        )
+
+    def _tilpas_historik_bredde(self, event):
+        self.historik_canvas.itemconfigure(self._historik_vindue, width=event.width)
 
     def _farvefelt(self, parent, tal, small=False):
         _, farvekode = FARVER[tal]
@@ -331,8 +350,9 @@ class MastermindApp:
         )
         self.submit_button.configure(state=tk.NORMAL)
         self.gæt_var.set("")
-        for widget in self.historik.winfo_children():
+        for widget in self.historik_indhold.winfo_children():
             widget.destroy()
+        self.historik_canvas.configure(scrollregion=(0, 0, 0, 0))
         for widget in self.hemmelig_frame.winfo_children():
             widget.destroy()
         self.entry.focus_set()

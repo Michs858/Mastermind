@@ -33,6 +33,7 @@ def gem_highscore(navn, forsog):
     highscores = laes_highscores()
     highscores.append({"navn": navn, "forsog": forsog})
     highscores.sort(key=lambda score: score["forsog"])
+    highscores = highscores[:5]
 
     with HIGHSCORE_FIL.open("w", encoding="utf-8") as fil:
         json.dump(highscores, fil, ensure_ascii=False, indent=2)
@@ -41,12 +42,12 @@ def gem_highscore(navn, forsog):
 
 
 class HighscorePanel:
-    def __init__(self, parent):
+    def __init__(self, parent, row=1, column=1):
         self.parent = parent
         self.highscores = []
 
         panel = tk.Frame(parent, bg="#ffffff", padx=16, pady=14)
-        panel.grid(row=1, column=1, sticky="nsew")
+        panel.grid(row=row, column=column, sticky="nsew")
         panel.columnconfigure(0, weight=1)
 
         tk.Label(
@@ -66,7 +67,7 @@ class HighscorePanel:
 
         self.highscore_list = tk.Listbox(
             panel,
-            height=15,
+            height=5,
             font=("Segoe UI", 10),
             relief="flat",
             bg="#f7f8f6",
@@ -74,7 +75,6 @@ class HighscorePanel:
             activestyle="none",
         )
         self.highscore_list.grid(row=2, column=0, sticky="nsew")
-        panel.rowconfigure(2, weight=1)
 
         self.vis_highscores()
 
@@ -94,7 +94,7 @@ class HighscorePanel:
             self.highscore_list.insert(tk.END, "Ingen highscores endnu")
             return
 
-        for placering, score in enumerate(self.highscores, start=1):
+        for placering, score in enumerate(self.highscores[:5], start=1):
             self.highscore_list.insert(
                 tk.END, f"{placering:>2}. {score['navn']} – {score['forsog']} forsøg"
             )
